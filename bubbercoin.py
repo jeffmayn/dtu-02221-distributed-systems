@@ -151,7 +151,7 @@ def is_valid():
 def add_transaction():
     json = request.get_json()
     transaction_keys = ['sender', 'receiver', 'amount']
-    if not all (Key in json for key in transaction:keys):
+    if not all (key in json for key in transaction_keys):
         return 'Some elements of the transaction are missing', 400
     
     index = blockchain.add_transaction(json['sender'], json['receiver'], json['amount'])
