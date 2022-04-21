@@ -65,19 +65,23 @@ class Blockchain:
             block_index += 1
         return True
     
-    def add_pendingTransaction(self, sender, receiver, data):
+    def add_pendingTransaction(self, sender, receiver, data, status = ""):
         self.pendingTransactions.append({
             'sender' : sender,
             'receiver' : receiver,
-            'data' : data
-            })
+            'data' : data,
+            'timestamp': str(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S:%f')),
+            'status': status
+        })
         
         previous_block = self.get_previous_block()
         return previous_block['index'] + 1
     
     def add_node(self, address):
         parsed_url = urlparse(address)
+        print("Parsed: ", parsed_url)
         self.nodes.add(parsed_url.netloc)
+        print("Nodes: ", self.nodes)
         
     def replace_chain(self):
         network = self.nodes

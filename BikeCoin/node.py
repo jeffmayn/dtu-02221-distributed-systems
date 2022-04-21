@@ -3,19 +3,25 @@ from flask import Flask, jsonify, request
 from uuid import uuid4
 from chain import Blockchain
 from wallet import Wallet
-import json
+import json    
+from datetime import datetime
+import sys
 
 # web app
 app = Flask(__name__)
 app.config['JSONIFY_PRETTYPRINT_REGULAR'] = False
-    
+
+port = 5000
+if(sys.argv[1] != None):
+    port = sys.argv[1]
+
 # creating an address for the node on port 5000
-node_address = str(uuid4()).replace('-', '')
-
-
+#node_address = str(uuid4()).replace('-', '')
 
 # create a blockchain
 blockchain = Blockchain()
+
+# create wallets
 wallets = [
     Wallet("jeff", ["1q2w3e", "0p9oi8"]),
     Wallet("martin", ["mbhghfgx"]),
@@ -89,7 +95,8 @@ def add_transaction():
     if(not sWallet.contains_item(json['data']) and sWallet.type != 'dealer'):
         return jsonify("Sender does not own item"), 418
 
-    index = blockchain.add_pendingTransaction(json['sender'], json['receiver'], json['data'])
+    status = json['status'] if 'status' in json else 'legit'
+    index = blockchain.add_pendingTransaction(json['sender'], json['receiver'], json['data'], status)
     response = {'message' : f'This transaction will be added to Block {index}'}
     return jsonify(response), 201 
     
@@ -156,12 +163,34 @@ def add_items_to_dealer():
     for item in items:
         wallet.add_item(item)
         
-        
     response = 'Items has been added to wallet'
     return jsonify(response), 200
 
-# running the app
-app.run(host = '0.0.0.0', port = 5000)
+@app.route('/verify_owner', methods = ['GET'])
+def verify_owner():
+    json = request.get_json()
+    owner = json['owner']
+    frame_number = json['frame_number']
 
-                
-        
+    t_all = []
+
+    for block in blockchain.chain:
+        for transaction in block['transactions']:
+            if(transaction['data'] == frame_number):
+                t_all.append(transaction)
+
+    date_format = '%Y-%m-%d %H:%M:%S:%f'
+
+    res = sorted(t_all, key=lambda t: datetime.strptime(t['timestamp'], date_format))
+    if len(res) <= 0:
+        return jsonify("No results found"), 200 
+    elif res[-1]['status'] == 'stolen': 
+        return jsonify("OOOOOH SHIIIIIT! This bike is reported stolen")
+    elif res[-1]['receiver'] == owner:
+        return jsonify("Owner is verified!"), 200 
+    else:
+        return jsonify("NOOOOOOOO! The suggested owner can not be verified as the real owner"), 200 
+
+
+# running the app
+app.run(host = '0.0.0.0', port = port)
