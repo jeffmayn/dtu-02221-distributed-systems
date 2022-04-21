@@ -2,9 +2,10 @@ import json
 
 class Wallet:
     
-    def __init__(self, id, items = []):
+    def __init__(self, id, items = [], type = "customer"):
         self.id = id
         self.items = items
+        self.type = type
 
     def add_item(self, item):
         self.items.append(item)

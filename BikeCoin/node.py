@@ -21,6 +21,7 @@ wallets = [
     Wallet("martin", ["mbhghfgx"]),
     Wallet("mathias", ["yuytd", "mnbvfg"]),
     Wallet("rasmus", ["uytrytd"]),
+    Wallet("The Dealer", ["oiugf", "iuyghj", "jhgcfxcvb", "kjuytr", "ytrdfgh"], 'dealer')
 ]
 
 # mining a blockchain
@@ -85,7 +86,7 @@ def add_transaction():
     if(rWallet == None):
         return jsonify("Receiver does not exist"), 418
     
-    if(not sWallet.contains_item(json['data'])):
+    if(not sWallet.contains_item(json['data']) and sWallet.type != 'dealer'):
         return jsonify("Sender does not own item"), 418
 
     index = blockchain.add_pendingTransaction(json['sender'], json['receiver'], json['data'])
@@ -130,8 +131,34 @@ def get_transactions():
 
 @app.route('/get_wallets', methods = ['GET'])
 def get_wallets():
-    return json.dumps([w.__dict__ for w in wallets]), 200 
+    return jsonify([w.__dict__ for w in wallets]), 200 
 
+@app.route('/add_items_to_dealer', methods = ['POST'])
+def add_items_to_dealer():
+    json = request.get_json()
+    items = json['items']
+    wallet_id = json['wallet_id']
+    
+    if items is None :
+        return "No items", 400
+
+    if wallet_id is None :
+        return "No wallet", 400
+    
+    wallet = next((w for w in wallets if w.id == wallet_id), None)
+
+    if wallet_id is None:
+        return "Wallet does not exist", 400
+
+    if wallet.type != 'dealer':
+        return "Wallet is invalid", 400
+    
+    for item in items:
+        wallet.add_item(item)
+        
+        
+    response = 'Items has been added to wallet'
+    return jsonify(response), 200
 
 # running the app
 app.run(host = '0.0.0.0', port = 5000)
