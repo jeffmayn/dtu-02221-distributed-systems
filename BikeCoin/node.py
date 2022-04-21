@@ -3,20 +3,22 @@ from flask import Flask, jsonify, request
 from uuid import uuid4
 from chain import Blockchain
 from wallet import Wallet
-import json    
+import requests
 from datetime import datetime
+from apscheduler.schedulers.background import BackgroundScheduler
 import sys
 
 # web app
 app = Flask(__name__)
 app.config['JSONIFY_PRETTYPRINT_REGULAR'] = False
 
-port = 5000
-if(sys.argv[1] != None):
-    port = sys.argv[1]
+
 
 # creating an address for the node on port 5000
 #node_address = str(uuid4()).replace('-', '')
+
+# Scheduler
+scheduler = BackgroundScheduler(daemon=True)
 
 # create a blockchain
 blockchain = Blockchain()
@@ -56,6 +58,10 @@ def mine_block():
                 'previous_hash' : block['previous_hash'],
                 'transactions' : block['transactions']
                 }
+
+    # update neighbour nodes
+    for node in blockchain.nodes:
+        requests.get(f'http://{node}/notify')
 
     return jsonify(response), 200
 
@@ -191,6 +197,24 @@ def verify_owner():
     else:
         return jsonify("NOOOOOOOO! The suggested owner can not be verified as the real owner"), 200 
 
+@app.route('/notify', methods = ['GET'])
+def notify():
+
+    scheduler.add_job(scheduled_updated)
+    scheduler.start()
+
+    return jsonify("All good"), 200 
+
+# Background task
+def scheduled_updated():
+    print("Updating chain")
+    global scheduler
+
+    blockchain.replace_chain()
 
 # running the app
+port = 5000
+if(sys.argv[1] != None):
+    port = sys.argv[1]
+
 app.run(host = '0.0.0.0', port = port)
