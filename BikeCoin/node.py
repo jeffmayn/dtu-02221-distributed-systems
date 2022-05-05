@@ -12,6 +12,7 @@ import sys
 app = Flask(__name__)
 app.config['JSONIFY_PRETTYPRINT_REGULAR'] = False
 
+# TODO: add login with username when starting node. Change receiver of mining reward to logged in user
 
 
 # creating an address for the node on port 5000
@@ -25,11 +26,11 @@ blockchain = Blockchain()
 
 # create wallets
 wallets = [
-    Wallet("jeff", ["1q2w3e", "0p9oi8"]),
-    Wallet("martin", ["mbhghfgx"]),
-    Wallet("mathias", ["yuytd", "mnbvfg"]),
-    Wallet("rasmus", ["uytrytd"]),
-    Wallet("The Dealer", ["oiugf", "iuyghj", "jhgcfxcvb", "kjuytr", "ytrdfgh"], 'dealer')
+    Wallet("Buyer One", []), 
+    Wallet("Buyer Two", []), 
+    Wallet("Buyer Three", []), 
+    Wallet("Thief", []), 
+    Wallet("Dealer", [], type='dealer'), 
 ]
 
 # mining a blockchain
@@ -42,8 +43,9 @@ def mine_block():
         sWallet = next((w for w in wallets if w.id == t['sender']), None)
         rWallet = next((w for w in wallets if w.id == t['receiver']), None)
 
-        sWallet.remove_item(t['data'])
-        rWallet.add_item(t['data'])
+        if(rWallet.type != 'dealer'):
+            sWallet.remove_item(t['data'])
+            rWallet.add_item(t['data'])
 
     previous_block = blockchain.get_previous_block()
     previous_proof = previous_block['proof']
@@ -144,6 +146,9 @@ def get_transactions():
 
 @app.route('/get_wallets', methods = ['GET'])
 def get_wallets():
+    for w in wallets:
+        print("Wallet: " + w.id + " Items: ")
+        print(w.items)
     return jsonify([w.__dict__ for w in wallets]), 200 
 
 @app.route('/add_items_to_dealer', methods = ['POST'])
@@ -158,19 +163,22 @@ def add_items_to_dealer():
     if wallet_id is None :
         return "No wallet", 400
     
+    
     wallet = next((w for w in wallets if w.id == wallet_id), None)
 
-    if wallet_id is None:
+    if wallet is None:
         return "Wallet does not exist", 400
 
     if wallet.type != 'dealer':
         return "Wallet is invalid", 400
     
+    response = 'Items has been added to wallet. Items have been added to the block with id: '
     for item in items:
         wallet.add_item(item)
+        index = blockchain.add_pendingTransaction('-', 'Dealer', item, 'legit')
         
-    response = 'Items has been added to wallet'
-    return jsonify(response), 200
+
+    return jsonify(response + str(index)), 200
 
 @app.route('/verify_owner', methods = ['GET'])
 def verify_owner():
