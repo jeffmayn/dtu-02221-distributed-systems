@@ -36,7 +36,7 @@ def mine_block():
     response = requests.post(f'http://{wallet_url}/transfer_items', headers=headers, json={"pendingTransactions": blockchain.pendingTransactions})
 
     if(response.status_code != 200):
-        return jsonify(response), 418
+        return response.text, response.status_code
 
     previous_block = blockchain.get_previous_block()
     previous_proof = previous_block['proof']
@@ -92,7 +92,7 @@ def add_transaction():
     
     response = requests.get(f'http://{wallet_url}/validate_from_and_to_wallets', json=json)
     if(response.status_code != 200):
-        return response, response.status_code
+        return response.text, response.status_code
 
     status = json['status'] if 'status' in json else 'legit'
     index = blockchain.add_pendingTransaction(json['sender'], json['receiver'], json['data'], status)
@@ -113,6 +113,9 @@ def connect_node():
     for node in nodes:
         blockchain.add_node(node)
         
+    scheduler.add_job(scheduled_updated, 'interval', seconds=30)
+    scheduler.start()
+
     response = {'message' :'All the nodes are now connected. The bubbercoin now contains the following nodes' ,
                 'total_nodes' : list(blockchain.nodes)
                 }
@@ -149,7 +152,7 @@ def add_items_to_dealer():
 
     response = requests.post(f'http://{wallet_url}/add_items_to_wallet', headers=headers, json=json)
     if(response.status_code != 200):
-        return response, response.status_code
+        return response.text, response.status_code
 
     response = 'Items has been added to wallet. Items have been added to the block with id: '
     for item in items:
@@ -217,9 +220,7 @@ def miner_wallet_balance():
 
 @app.route('/notify', methods = ['GET'])
 def notify():
-
-    scheduler.add_job(scheduled_updated)
-    scheduler.start()
+    blockchain.replace_chain()
 
     return jsonify("All good"), 200 
 
