@@ -8,6 +8,8 @@ from urllib.parse import urlparse
 
 # blockchain
 class Blockchain:
+
+    master_node = "127.0.0.1:5000"
     
     def __init__(self):
         self.chain = []
@@ -100,6 +102,11 @@ class Blockchain:
             self.chain = longest_chain
             return True
         return False
-    
+
+    def get_pending_transactions(self):
+        response = requests.get(f'http://{self.master_node}/get_pending_transactions')
+        transactions = response.json()['transactions']
+        self.pendingTransactions = transactions
+
     def toJSON(self):
         return json.dumps(self, default=lambda o: o.__dict__, sort_keys=True, indent=4)
