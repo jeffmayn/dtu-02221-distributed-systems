@@ -39,6 +39,7 @@ wallets = [
     Wallet("Buyer Three", []), 
     Wallet("Thief", []), 
     Wallet("Dealer", [], type='dealer'), 
+    Wallet("Badekar The Miner", [], type="miner"),
     Wallet("Bubber The Miner", [], type="miner"),
     Wallet("Niels Christian The Miner", [], type="miner")
 
@@ -60,6 +61,8 @@ def transfer_items():
         if(rWallet.type != 'dealer'):
             sWallet.remove_item(t['data'])
             rWallet.add_item(t['data'])
+        else:
+            rWallet.add_item(t['data'])
 
     return jsonify("Items transferred"), 200
 
@@ -80,10 +83,9 @@ def validate_from_and_to_wallets():
 
     return jsonify("All good"), 200
 
-@app.route('/add_items_to_wallet', methods = ['POST'])
-def add_items_to_wallet():
+@app.route('/validate_dealer', methods = ['POST'])
+def validate_dealer():
     json = request.get_json()
-    items = json['items']
     wallet_id = json['wallet_id']
 
     wallet = next((w for w in wallets if w.id == wallet_id), None)
@@ -93,9 +95,6 @@ def add_items_to_wallet():
 
     if wallet.type != 'dealer':
         return "Wallet is invalid", 400
-
-    for item in items:
-        wallet.add_item(item)
 
     return jsonify([w.__dict__ for w in wallets]), 200 
 

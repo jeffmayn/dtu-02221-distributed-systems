@@ -3,7 +3,7 @@ from flask import Flask, jsonify, request
 from uuid import uuid4
 from chain import Blockchain
 import requests
-from datetime import datetime
+import datetime
 from apscheduler.schedulers.background import BackgroundScheduler
 import sys
 
@@ -28,8 +28,6 @@ miner_wallet_id = ''
 @app.route('/mine_block', methods = ['GET'])
 def mine_block():
 
-    blockchain.get_pending_transactions()
-
     if(len(blockchain.pendingTransactions) == 0):
         return jsonify("No pending transactions"), 418
 
@@ -42,8 +40,14 @@ def mine_block():
     previous_proof = previous_block['proof']
     proof = blockchain.proof_of_work(previous_proof)
     previous_hash = blockchain.hash(previous_block)
-    blockchain.add_pendingTransaction(sender = 'Chain Insurance Ltd.', receiver = miner_wallet_id, data = blockchain.miningReward)
+    blockchain.add_pendingTransaction(sender = 'Chain Insurance Ltd.', receiver = miner_wallet_id, data = blockchain.miningReward, timestamp = str(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S:%f')))
     block = blockchain.create_block(proof, previous_hash)
+
+    is_valid = blockchain.is_chain_valid(blockchain.chain)
+    if(not is_valid):
+        return jsonify("The chain is invalid. Block is not added to chain"), 418
+
+
     response = {'message' : 'Tillykke, du har lige minet en block!', 
                 'index' : block['index'],
                 'timestamp' : block['timestamp'],
@@ -54,7 +58,7 @@ def mine_block():
 
     # update neighbour nodes
     for node in blockchain.nodes:
-        requests.get(f'http://{node}/notify')
+        requests.post(f'http://{node}/notify', headers=headers, json=block)
 
     return jsonify(response), 200
 
@@ -95,8 +99,22 @@ def add_transaction():
         return response.text, response.status_code
 
     status = json['status'] if 'status' in json else 'legit'
-    index = blockchain.add_pendingTransaction(json['sender'], json['receiver'], json['data'], status)
+
+    transaction = {
+        'sender': json['sender'], 
+        'receiver': json['receiver'], 
+        'data': json['data'], 
+        'timestamp': str(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S:%f')), 
+        'status': status
+    }
+
+    index = blockchain.add_pendingTransaction(transaction['sender'], transaction['receiver'], transaction['data'], transaction['timestamp'],  transaction['status'])
     response = {'message' : f'This transaction will be added to Block {index}'}
+
+    # notify network - add transactions
+    for node in blockchain.nodes:
+        print(requests.post(f'http://{node}/broadcast_transactions', headers=headers, json=[transaction]).text)
+
     return jsonify(response), 201 
     
 # decentralize our blockchain
@@ -119,7 +137,7 @@ def connect_node():
     response = {'message' :'All the nodes are now connected. The bubbercoin now contains the following nodes' ,
                 'total_nodes' : list(blockchain.nodes)
                 }
-    return jsonify(response), 201 
+    return jsonify(response), 200 
 
 # replacing the chain by the longest chain if needed
 @app.route('/replace_chain', methods = ['GET'])
@@ -150,15 +168,40 @@ def add_items_to_dealer():
     if wallet_id is None :
         return "No wallet", 400
 
-    response = requests.post(f'http://{wallet_url}/add_items_to_wallet', headers=headers, json=json)
+    response = requests.post(f'http://{wallet_url}/validate_dealer', headers=headers, json={"wallet_id": wallet_id})
     if(response.status_code != 200):
         return response.text, response.status_code
 
     response = 'Items has been added to wallet. Items have been added to the block with id: '
+    transactions = []
     for item in items:
-        index = blockchain.add_pendingTransaction('-', 'Dealer', item, 'legit')
+        t = {
+            'sender' : "-",
+            'receiver' : "Dealer",
+            'data' : item,
+            'timestamp': str(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S:%f')),
+            'status': "legit"
+        }
+        index = blockchain.add_pendingTransaction(t['sender'], t['receiver'], t['data'], t['timestamp'], t['status'])
+        transactions.append(t)           
+
+    # notify network - add transactions
+    for node in blockchain.nodes:
+        print(requests.post(f'http://{node}/broadcast_transactions', headers=headers, json=transactions).text)
 
     return jsonify(response + str(index)), 200
+
+@app.route('/broadcast_transactions', methods = ['POST'])
+def broadcast_transactions():
+    transactions = request.get_json()
+    index = "-"
+    for t in transactions:
+        index = blockchain.add_pendingTransaction(t['sender'], t['receiver'], t['data'], t['timestamp'], t['status'])
+
+    response = 'Items has been added to wallet. Items have been added to the block with id: '
+
+    return jsonify(response + str(index)), 200
+
 
 @app.route('/verify_owner', methods = ['GET'])
 def verify_owner():
@@ -175,7 +218,7 @@ def verify_owner():
 
     date_format = '%Y-%m-%d %H:%M:%S:%f'
 
-    res = sorted(t_all, key=lambda t: datetime.strptime(t['timestamp'], date_format))
+    res = sorted(t_all, key=lambda t: datetime.datetime.strptime(t['timestamp'], date_format))
     if len(res) <= 0:
         return jsonify("No results found"), 200 
     elif res[-1]['status'] == 'stolen': 
@@ -199,7 +242,7 @@ def get_provenance_history():
                 provenance_history.append(transaction)
 
     date_format = '%Y-%m-%d %H:%M:%S:%f'
-    sorted_history = sorted(provenance_history, key=lambda t: datetime.strptime(t['timestamp'], date_format), reverse=True)
+    sorted_history = sorted(provenance_history, key=lambda t: datetime.datetime.strptime(t['timestamp'], date_format), reverse=True)
     return jsonify(sorted_history), 200 
 
 
@@ -218,11 +261,28 @@ def miner_wallet_balance():
     account = { "balance": balance }
     return jsonify(account), 200 
 
-@app.route('/notify', methods = ['GET'])
+@app.route('/notify', methods = ['POST'])
 def notify():
-    blockchain.replace_chain()
+    block = request.get_json()
 
-    return jsonify("All good"), 200 
+    blockchain.chain.append(block)
+    is_valid = blockchain.is_chain_valid(blockchain.chain)
+
+    t_remove = []
+    if(is_valid):
+        for t in block['transactions']:
+            for tp in blockchain.pendingTransactions:
+                if(blockchain.hash(t) == blockchain.hash(tp)):
+                    t_remove.append(tp)
+
+        for t in t_remove:
+            blockchain.pendingTransactions.remove(t)
+            
+        return jsonify("All good"), 200 
+    else:
+        blockchain.chain.remove(block)
+        return jsonify("Block can not be verified"), 418 
+
 
 # Background task
 def scheduled_updated():

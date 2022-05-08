@@ -8,19 +8,17 @@ from urllib.parse import urlparse
 
 # blockchain
 class Blockchain:
-
-    master_node = "127.0.0.1:5000"
     
     def __init__(self):
         self.chain = []
         self.pendingTransactions = []
-        self.create_block(proof = 1, previous_hash = '0')
+        self.create_block(proof = 1, previous_hash = '0', timestamp=datetime.datetime(2022, 1, 1).strftime('%Y-%m-%d %H:%M:%S:%f'))
         self.nodes = set()
         self.miningReward = 100
         
-    def create_block(self, proof, previous_hash):
+    def create_block(self, proof, previous_hash, timestamp = None):
         block = {'index': len(self.chain) + 1,
-                 'timestamp' : str(datetime.datetime.now()),
+                 'timestamp' : datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S:%f') if timestamp == None else timestamp,
                  'proof' : proof,
                  'previous_hash' : previous_hash,
                  'transactions' : self.pendingTransactions
@@ -55,6 +53,7 @@ class Blockchain:
         
         while block_index < len(chain):
             block = chain[block_index]
+
             if block['previous_hash'] != self.hash(previous_block):
                 return False
             previous_proof = previous_block['proof']
@@ -67,12 +66,12 @@ class Blockchain:
             block_index += 1
         return True
     
-    def add_pendingTransaction(self, sender, receiver, data, status = ""):
+    def add_pendingTransaction(self, sender, receiver, data, timestamp, status = ""):
         self.pendingTransactions.append({
             'sender' : sender,
             'receiver' : receiver,
             'data' : data,
-            'timestamp': str(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S:%f')),
+            'timestamp': timestamp,
             'status': status
         })
         
@@ -103,10 +102,6 @@ class Blockchain:
             return True
         return False
 
-    def get_pending_transactions(self):
-        response = requests.get(f'http://{self.master_node}/get_pending_transactions')
-        transactions = response.json()['transactions']
-        self.pendingTransactions = transactions
 
     def toJSON(self):
         return json.dumps(self, default=lambda o: o.__dict__, sort_keys=True, indent=4)
