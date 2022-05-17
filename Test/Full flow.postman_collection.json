@@ -1,0 +1,1549 @@
+{
+	"info": {
+		"_postman_id": "a8bc0932-9777-4904-9ad0-88c6fa15158c",
+		"name": "Full flow",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "S1: Init dealer",
+			"item": [
+				{
+					"name": "Add bicycles to dealer",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response string contains block ID\", function () {",
+									"    pm.expect(pm.response.text()).to.length.least(77);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"wallet_id\": \"Dealer\", \"items\": [\"bicycle1\", \"bicycle2\", \"bicycle3\", \"bicycle4\", \"bicycle5\"]}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://{{url}}:{{miner1}}/add_items_to_dealer",
+							"protocol": "http",
+							"host": [
+								"{{url}}"
+							],
+							"port": "{{miner1}}",
+							"path": [
+								"add_items_to_dealer"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Transactions",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Amount of transactions is 5 (matching number of bikes added to dealer)\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.length(5);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{url}}:{{miner2}}/get_transactions",
+							"protocol": "http",
+							"host": [
+								"{{url}}"
+							],
+							"port": "{{miner2}}",
+							"path": [
+								"get_transactions"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Mine Block",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Body contains congratulations message\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"Tillykke, du har lige minet en block!\");",
+									"});",
+									"pm.test(\"Response contains 6 transactions\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.transactions).to.length(6);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{url}}:{{miner2}}/mine_block",
+							"protocol": "http",
+							"host": [
+								"{{url}}"
+							],
+							"port": "{{miner2}}",
+							"path": [
+								"mine_block"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Chain",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"No transaction in Genesis block\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.chain[0].transactions).to.eql([]);",
+									"});",
+									"pm.test(\"Mined block contains 5 bike transactions and 1 mining transaction\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.chain[1].transactions).to.length(6);",
+									"});",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{url}}:{{miner3}}/get_chain",
+							"protocol": "http",
+							"host": [
+								"{{url}}"
+							],
+							"port": "{{miner3}}",
+							"path": [
+								"get_chain"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Wallets",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Dealer has 5 bikes\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData[4].items).to.length(5);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{url}}:{{wallet_node}}/get_wallets",
+							"protocol": "http",
+							"host": [
+								"{{url}}"
+							],
+							"port": "{{wallet_node}}",
+							"path": [
+								"get_wallets"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "S2: Legit Buyer",
+			"item": [
+				{
+					"name": "Add Transaction",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response string contains block ID\", function () {",
+									"    pm.expect(pm.response.text()).to.length.least(41);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"sender\": \"Dealer\",\n    \"receiver\": \"Buyer One\",\n    \"data\": \"bicycle1\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://{{url}}:{{miner1}}/add_transaction",
+							"protocol": "http",
+							"host": [
+								"{{url}}"
+							],
+							"port": "{{miner1}}",
+							"path": [
+								"add_transaction"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Mine Block",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Body contains congratulations message\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"Tillykke, du har lige minet en block!\");",
+									"});",
+									"pm.test(\"Response contains 2 transactions\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.transactions).to.length(2);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{url}}:{{miner2}}/mine_block",
+							"protocol": "http",
+							"host": [
+								"{{url}}"
+							],
+							"port": "{{miner2}}",
+							"path": [
+								"mine_block"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Chain",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"No transaction in Genesis block\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.chain[0].transactions).to.eql([]);",
+									"});",
+									"pm.test(\"Chain contains 3 blocks\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.length).to.eql(3);",
+									"});",
+									"pm.test(\"Mined block contains 1 bike transaction and 1 mining transaction\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.chain[2].transactions).to.length(2);",
+									"});",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{url}}:{{miner3}}/get_chain",
+							"protocol": "http",
+							"host": [
+								"{{url}}"
+							],
+							"port": "{{miner3}}",
+							"path": [
+								"get_chain"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Wallets",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Buyer One owns bicycle1\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData[0].items[0]).to.eql(\"bicycle1\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{url}}:{{wallet_node}}/get_wallets",
+							"protocol": "http",
+							"host": [
+								"{{url}}"
+							],
+							"port": "{{wallet_node}}",
+							"path": [
+								"get_wallets"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "S3: Legit Buyer to Buyer",
+			"item": [
+				{
+					"name": "Add Transaction",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response string contains block ID\", function () {",
+									"    pm.expect(pm.response.text()).to.length.least(41);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"sender\": \"Buyer One\",\n    \"receiver\": \"Buyer Two\",\n    \"data\": \"bicycle1\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://{{url}}:{{miner1}}/add_transaction",
+							"protocol": "http",
+							"host": [
+								"{{url}}"
+							],
+							"port": "{{miner1}}",
+							"path": [
+								"add_transaction"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Mine Block",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Body contains congratulations message\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"Tillykke, du har lige minet en block!\");",
+									"});",
+									"pm.test(\"Response contains 2 transactions\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.transactions).to.length(2);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{url}}:{{miner1}}/mine_block",
+							"protocol": "http",
+							"host": [
+								"{{url}}"
+							],
+							"port": "{{miner1}}",
+							"path": [
+								"mine_block"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Chain",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"No transaction in Genesis block\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.chain[0].transactions).to.eql([]);",
+									"});",
+									"pm.test(\"Chain contains 4 blocks\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.length).to.eql(4);",
+									"});",
+									"pm.test(\"Mined block contains 1 bike transaction and 1 mining transaction\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.chain[2].transactions).to.length(2);",
+									"});",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{url}}:{{miner1}}/get_chain",
+							"protocol": "http",
+							"host": [
+								"{{url}}"
+							],
+							"port": "{{miner1}}",
+							"path": [
+								"get_chain"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Wallets",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Buyer Two owns bicycle1\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData[1].items[0]).to.eql(\"bicycle1\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{url}}:{{wallet_node}}/get_wallets",
+							"protocol": "http",
+							"host": [
+								"{{url}}"
+							],
+							"port": "{{wallet_node}}",
+							"path": [
+								"get_wallets"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "S4: Thief",
+			"item": [
+				{
+					"name": "Verify owner",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Owner cannot be identified as the owner\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"NOOOOOOOO! The suggested owner can not be verified as the real owner\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"owner\": \"Thief\",\n    \"frame_number\": \"bicycle1\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://{{url}}:{{miner1}}/verify_owner",
+							"protocol": "http",
+							"host": [
+								"{{url}}"
+							],
+							"port": "{{miner1}}",
+							"path": [
+								"verify_owner"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Mark as stolen",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Transaction is added to block\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(pm.response.text()).to.length.least(41);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"sender\": \"Buyer Two\",\n    \"receiver\": \"Buyer Two\",\n    \"data\": \"bicycle1\",\n    \"status\": \"stolen\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://{{url}}:{{miner1}}/add_transaction",
+							"protocol": "http",
+							"host": [
+								"{{url}}"
+							],
+							"port": "{{miner1}}",
+							"path": [
+								"add_transaction"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Mine Block",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Body contains congratulations message\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"Tillykke, du har lige minet en block!\");",
+									"});",
+									"pm.test(\"Response contains 2 transactions\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.transactions).to.length(2);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{url}}:{{miner3}}/mine_block",
+							"protocol": "http",
+							"host": [
+								"{{url}}"
+							],
+							"port": "{{miner3}}",
+							"path": [
+								"mine_block"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Verify owner",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Bike reported stolen\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"OOOOOH SHIIIIIT! This bike is reported stolen\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"owner\": \"Thief\",\n    \"frame_number\": \"bicycle1\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://{{url}}:{{miner1}}/verify_owner",
+							"protocol": "http",
+							"host": [
+								"{{url}}"
+							],
+							"port": "{{miner1}}",
+							"path": [
+								"verify_owner"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Chain",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"No transaction in Genesis block\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.chain[0].transactions).to.eql([]);",
+									"});",
+									"pm.test(\"Chain contains 5 blocks\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.length).to.eql(5);",
+									"});",
+									"pm.test(\"Mined block contains 1 bike transaction and 1 mining transaction\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.chain[2].transactions).to.length(2);",
+									"});",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{url}}:{{miner1}}/get_chain",
+							"protocol": "http",
+							"host": [
+								"{{url}}"
+							],
+							"port": "{{miner1}}",
+							"path": [
+								"get_chain"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "S5: Provenance history",
+			"item": [
+				{
+					"name": "Get provenance history",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Bicycle1's provenance history contains 4 events.\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.length).to.eql(4);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"frame_number\": \"bicycle1\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://{{url}}:{{miner1}}/provenance_history",
+							"protocol": "http",
+							"host": [
+								"{{url}}"
+							],
+							"port": "{{miner1}}",
+							"path": [
+								"provenance_history"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "S6: Check miner wallet",
+			"item": [
+				{
+					"name": "Check balance 1",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Bubber The Miner has earned 200 BikeCoins while mining\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.balance).to.eql(200);",
+									"});",
+									"",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"wallet_id\": \"{{miner_id}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://{{url}}:{{miner1}}/wallet_balance",
+							"protocol": "http",
+							"host": [
+								"{{url}}"
+							],
+							"port": "{{miner1}}",
+							"path": [
+								"wallet_balance"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Check balance 2",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Niels Christian The Miner has earned 100 BikeCoins while mining\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.balance).to.eql(100);",
+									"});",
+									"",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"wallet_id\": \"{{miner_2_id}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://{{url}}:{{miner1}}/wallet_balance",
+							"protocol": "http",
+							"host": [
+								"{{url}}"
+							],
+							"port": "{{miner1}}",
+							"path": [
+								"wallet_balance"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Check balance 3",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Badekar The Miner has earned 100 BikeCoins while mining\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.balance).to.eql(100);",
+									"});",
+									"",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"wallet_id\": \"{{miner_3_id}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://{{url}}:{{miner1}}/wallet_balance",
+							"protocol": "http",
+							"host": [
+								"{{url}}"
+							],
+							"port": "{{miner1}}",
+							"path": [
+								"wallet_balance"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "S7: Spend BikeCoin (Not implemented)",
+			"item": []
+		},
+		{
+			"name": "S8: Simplified full flow",
+			"item": [
+				{
+					"name": "Add bicycles to dealer",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response string contains block ID\", function () {",
+									"    pm.expect(pm.response.text()).to.length.least(77);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"wallet_id\": \"Dealer\", \"items\": [\"bicycle1\", \"bicycle2\", \"bicycle3\", \"bicycle4\", \"bicycle5\"]}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://{{url}}:{{miner1}}/add_items_to_dealer",
+							"protocol": "http",
+							"host": [
+								"{{url}}"
+							],
+							"port": "{{miner1}}",
+							"path": [
+								"add_items_to_dealer"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Mine Block",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Body contains congratulations message\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"Tillykke, du har lige minet en block!\");",
+									"});",
+									"pm.test(\"Response contains 6 transactions\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.transactions).to.length(6);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{url}}:{{miner1}}/mine_block",
+							"protocol": "http",
+							"host": [
+								"{{url}}"
+							],
+							"port": "{{miner1}}",
+							"path": [
+								"mine_block"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add Transaction",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response string contains block ID\", function () {",
+									"    pm.expect(pm.response.text()).to.length.least(41);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"sender\": \"Dealer\",\n    \"receiver\": \"Buyer One\",\n    \"data\": \"bicycle1\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://{{url}}:{{miner1}}/add_transaction",
+							"protocol": "http",
+							"host": [
+								"{{url}}"
+							],
+							"port": "{{miner1}}",
+							"path": [
+								"add_transaction"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Mine Block",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Body contains congratulations message\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"Tillykke, du har lige minet en block!\");",
+									"});",
+									"pm.test(\"Response contains 2 transactions\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.transactions).to.length(2);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{url}}:{{miner2}}/mine_block",
+							"protocol": "http",
+							"host": [
+								"{{url}}"
+							],
+							"port": "{{miner2}}",
+							"path": [
+								"mine_block"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add Transaction",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response string contains block ID\", function () {",
+									"    pm.expect(pm.response.text()).to.length.least(41);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"sender\": \"Buyer One\",\n    \"receiver\": \"Buyer Two\",\n    \"data\": \"bicycle1\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://{{url}}:{{miner1}}/add_transaction",
+							"protocol": "http",
+							"host": [
+								"{{url}}"
+							],
+							"port": "{{miner1}}",
+							"path": [
+								"add_transaction"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Mine Block",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Body contains congratulations message\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"Tillykke, du har lige minet en block!\");",
+									"});",
+									"pm.test(\"Response contains 2 transactions\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.transactions).to.length(2);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{url}}:{{miner1}}/mine_block",
+							"protocol": "http",
+							"host": [
+								"{{url}}"
+							],
+							"port": "{{miner1}}",
+							"path": [
+								"mine_block"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Mark as stolen",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Transaction is added to block\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(pm.response.text()).to.length.least(41);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"sender\": \"Buyer Two\",\n    \"receiver\": \"Buyer Two\",\n    \"data\": \"bicycle1\",\n    \"status\": \"stolen\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://{{url}}:{{miner1}}/add_transaction",
+							"protocol": "http",
+							"host": [
+								"{{url}}"
+							],
+							"port": "{{miner1}}",
+							"path": [
+								"add_transaction"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Mine Block",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Body contains congratulations message\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"Tillykke, du har lige minet en block!\");",
+									"});",
+									"pm.test(\"Response contains 2 transactions\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.transactions).to.length(2);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{url}}:{{miner1}}/mine_block",
+							"protocol": "http",
+							"host": [
+								"{{url}}"
+							],
+							"port": "{{miner1}}",
+							"path": [
+								"mine_block"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Verify owner",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Bike reported stolen\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"OOOOOH SHIIIIIT! This bike is reported stolen\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"owner\": \"Thief\",\n    \"frame_number\": \"bicycle1\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://{{url}}:{{miner1}}/verify_owner",
+							"protocol": "http",
+							"host": [
+								"{{url}}"
+							],
+							"port": "{{miner1}}",
+							"path": [
+								"verify_owner"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get provenance history",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Bicycle1's provenance history contains 4 events.\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.length).to.eql(4);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"frame_number\": \"bicycle1\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://{{url}}:{{miner1}}/provenance_history",
+							"protocol": "http",
+							"host": [
+								"{{url}}"
+							],
+							"port": "{{miner1}}",
+							"path": [
+								"provenance_history"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Validate blockchains",
+			"item": [
+				{
+					"name": "Validate blockchain 1",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Blockchain is valid\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.message).to.eql(\"The blockchain is valid\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{url}}:{{miner1}}/is_valid",
+							"protocol": "http",
+							"host": [
+								"{{url}}"
+							],
+							"port": "{{miner1}}",
+							"path": [
+								"is_valid"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Validate blockchain 2",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Blockchain is valid\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.message).to.eql(\"The blockchain is valid\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{url}}:{{miner1}}/is_valid",
+							"protocol": "http",
+							"host": [
+								"{{url}}"
+							],
+							"port": "{{miner1}}",
+							"path": [
+								"is_valid"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Validate blockchain 3",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Blockchain is valid\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.message).to.eql(\"The blockchain is valid\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{url}}:{{miner1}}/is_valid",
+							"protocol": "http",
+							"host": [
+								"{{url}}"
+							],
+							"port": "{{miner1}}",
+							"path": [
+								"is_valid"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "url",
+			"value": "127.0.0.1",
+			"type": "string"
+		},
+		{
+			"key": "miner1",
+			"value": "5000",
+			"type": "string"
+		},
+		{
+			"key": "miner2",
+			"value": "5001",
+			"type": "string"
+		},
+		{
+			"key": "miner3",
+			"value": "5002",
+			"type": "string"
+		},
+		{
+			"key": "miner_id",
+			"value": "Bubber The Miner",
+			"type": "string"
+		},
+		{
+			"key": "miner_2_id",
+			"value": "Niels Christian The Miner",
+			"type": "string"
+		},
+		{
+			"key": "miner_3_id",
+			"value": "Badekar The Miner",
+			"type": "string"
+		},
+		{
+			"key": "wallet_node",
+			"value": "5003",
+			"type": "string"
+		}
+	]
+}
