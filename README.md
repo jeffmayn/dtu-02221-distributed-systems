@@ -34,3 +34,8 @@ If any of the values are changed the Postman test script will
 no longer be fully functional since it uses these values to perform
 requests and validate their responses.
 
+ Connect the nodes using:
+ ```
+ ./BikeCoin/connect_nodes.sh
+ ```
+
