@@ -22,13 +22,14 @@ python3 BikeCoin/node.py <miner_id_1> <port_1>
 python3 BikeCoin/node.py <miner_id_2> <port_2>
 python3 BikeCoin/node.py <miner_id_3> <port_3>
 ```
-`
-In our example we have used the following input variables but these can be modified if needed.
-Node        Miner-ID                  Port
-1           Niels Christian The Miner 5002
-2           Bubber The Miner          5001
-3           Badekar The Miner         5000
-`
+In our example we have used the following input variables but these can be modified if needed
+
+|  Node |          Miner-ID          | Port |
+| ----- | -------------------------- | ---- |
+|   1   | Niels Christian The Miner  | 5002 |
+|   2   | Bubber The Miner           | 5001 |
+|   2   | Bubber The Miner           | 5000 |
+
 If any of the values are changed the Postman test script will
 no longer be fully functional since it uses these values to perform
 requests and validate their responses.
