@@ -30,12 +30,13 @@ In our example we have used the following input variables but these can be modif
 |   2   | Bubber The Miner           | 5001 |
 |   2   | Bubber The Miner           | 5000 |
 
-If any of the values are changed the Postman test script will
-no longer be fully functional since it uses these values to perform
-requests and validate their responses.
+If any of the values are changed the Postman test script will no longer be fully functional since it uses these values to perform requests and validate their responses.
 
  Connect the nodes using:
  ```
  ./BikeCoin/connect_nodes.sh
  ```
+Now that the nodes are connected the system is ready to use and therefore for the final step.
+
+Run the Postman test collection: The system can be tested and validated using the Postman test collection which can be found in the Test-folder in the root of the GitHub project.
 
