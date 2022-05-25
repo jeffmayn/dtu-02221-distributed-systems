@@ -1,4 +1,4 @@
-# dtu-02221-distributed-systems
+# Blockchain-, crypto-currency-, insurance-project
 
 
 BikeCoin:
